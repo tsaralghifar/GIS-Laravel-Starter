@@ -16,25 +16,77 @@
                     Form
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <div class="form-group">
-                                <label>Longtitude</label>
-                                <input wire:model="long" type="text" class="form-control">
+                    <form 
+                        @if ($idEdit)
+                            wire:submit.prevent="updateLocation"
+                        @else
+                            wire:submit.prevent="saveLocation"
+                        @endif
+                    >
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label>Longtitude</label>
+                                    <input wire:model="long" type="text" class="form-control">
+                                    @error('long')
+                                        <small class="text-danger">{{$message}}</small>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label>Lattitude</label>
+                                    <input wire:model="lat" type="text" class="form-control">
+                                    @error('lat')
+                                        <small class="text-danger">{{$message}}</small>
+                                    @enderror
+                                </div>
                             </div>
                         </div>
-                        <div class="col-sm-6">
-                            <div class="form-group">
-                                <label>Lattitude</label>
-                                <input wire:model="lat" type="text" class="form-control">
-                            </div>
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input wire:model="title" type="text" class="form-control">
+                            @error('title')
+                                <small class="text-danger">{{$message}}</small>
+                            @enderror
                         </div>
-                    </div>
+                        <div class="form-group">
+                            <label>Desciption</label>
+                            <textarea wire:model="description" class="form-control"></textarea>
+                            @error('description')
+                                <small class="text-danger">{{$message}}</small>
+                            @enderror
+                        </div>
+                        <div class="form-group">
+                            <label>Picture</label>
+                            <div class="custom-file">
+                                <input wire:model="image" type="file" class="custom-file-input" id="customFile">
+                                <label class="custom-file-label" for="customFile">Choose file</label>
+                            </div>
+                            @error('image')
+                                <small class="text-danger">{{$message}}</small>
+                            @enderror
+                            @if ($image)
+                                <img src="{{$image->temporaryUrl()}}" class="img-fluid">
+                            @endif
+                            @if ($imageUrl && !$image)
+                                <img src="{{asset('/storage/images/'.$imageUrl)}}" class="img-fluid">
+                            @endif
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-dark text-white btn-block">{{$idEdit ? "Save Update" : "Save Location"}}</button>
+                            @if ($idEdit)
+                                <button wire:click="destroyLocation" type="button" class="btn btn-danger text-white btn-block">Delete</button>
+                            @endif
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+
 
 @push('scripts')
     <script>
@@ -47,6 +99,76 @@
                 zoom: 11.15,
                 style: 'mapbox://styles/mapbox/streets-v11'
             });
+
+            
+
+            const loadLocation = (geoJson) => {
+                geoJson.features.forEach((location) => {
+                    const {geometry, properties} = location
+                    const {iconSize, locationId, title, image, description} = properties
+
+                    let markerElement = document.createElement('div')
+                    markerElement.className = 'marker' + locationId
+                    markerElement.id = locationId
+                    markerElement.style.backgroundImage = 'url(https://docs.mapbox.com/help/demos/custom-markers-gl-js/mapbox-icon.png)'
+                    markerElement.style.backgroundSize = 'cover'
+                    markerElement.style.width = '50px'
+                    markerElement.style.height = '50px'
+
+                    const imageStorage = '{{asset("/storage/images")}}' + '/' + image
+
+                    const content = `
+                                    <div style="overflow-y, auto;max-height:400px,width:100%">
+                                    <table class="table table-sm mt-2">
+                                        <tbody>
+                                            <tr>
+                                                <td>Title</td>
+                                                <td>${title}</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Picture</td>
+                                                <td><img src="${imageStorage}" loading="lazy" class="img-fluid"></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Desciption</td>
+                                                <td>${description}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                           ` 
+                           
+                           markerElement.addEventListener('click', (e) => {
+                               const locationId = e.toElement.id
+                               @this.findLocationById(locationId)
+                           })
+
+                    const popUp = new mapboxgl.Popup({
+                        offset:25
+                    }).setHTML(content).setMaxWidth("400px")
+
+                    new mapboxgl.Marker(markerElement)
+                    .setLngLat(geometry.coordinates)
+                    .setPopup(popUp)
+                    .addTo(map)
+                })
+            }
+
+            loadLocation({!! $geoJson !!})
+
+            window.addEventListener('locationAdded', (e) => {
+                loadLocation(JSON.parse(e.detail))
+            })
+
+            window.addEventListener('updateLocation', (e) => {
+                loadLocation(JSON.parse(e.detail))
+                $('.mapboxgl-popup').remove()
+            })
+
+            window.addEventListener('destroyLocation', (e) => {
+                $('.marker' + e.detail).remove()
+                $('.mapboxgl-popup').remove()
+            })
 
             map.addControl(new mapboxgl.NavigationControl())
 
