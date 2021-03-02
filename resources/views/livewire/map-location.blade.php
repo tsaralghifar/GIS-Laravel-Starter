@@ -16,7 +16,20 @@
                     Form
                 </div>
                 <div class="card-body">
-                    
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label>Longtitude</label>
+                                <input wire:model="long" type="text" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="form-group">
+                                <label>Lattitude</label>
+                                <input wire:model="lat" type="text" class="form-control">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -24,8 +37,8 @@
 </div>
 
 @push('scripts')
-    {{-- <script>
-        document.addEventListener('liveware:load', () => {
+    <script>
+        document.addEventListener('livewire:load', () => {
             const defaultLocation = [114.61739664621774, -3.3398424494228607];
             mapboxgl.accessToken = '{{env('MAP_KEY')}}';
             var map = new mapboxgl.Map({
@@ -41,11 +54,14 @@
                 const longtitude = e.lngLat.lng
                 const lattitude = e.lngLat.lat
 
-                console.log({longtitude, lattitude});
+                @this.long = longtitude
+                @this.lat = lattitude
             })
         })
-    </script> --}}
-    <script>
+    </script>
+@endpush
+
+{{-- <script>
         document.addEventListener('livewire:load',  ()  => {
             const defaultLocation = [114.61739664621774, -3.3398424494228607];
             mapboxgl.accessToken = '{{env('MAP_KEY')}}';
@@ -55,11 +71,11 @@
                 zoom: 11.15,
                 style: "mapbox://styles/mapbox/streets-v11"
             });
-            map.addControl(new mapboxgl.NavigationControl());
-            
             //light-v10, outdoors-v11, satellite-v9, streets-v11, dark-v10
-            const style = "streets-v11"
-            map.setStyle(`mapbox://styles/mapbox/${style}`);
+            // const style = "streets-v11"
+            // map.setStyle(`mapbox://styles/mapbox/${style}`);
+
+            map.addControl(new mapboxgl.NavigationControl());
         
             map.on('click', (e) =>  {
             const longtitude = e.lngLat.lng
@@ -69,5 +85,4 @@
             })
         
         })
-        </script>
-@endpush
+        </script> --}}
